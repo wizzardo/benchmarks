@@ -2,6 +2,8 @@ apply plugin: 'java'
 apply plugin: 'me.champeau.gradle.jmh'
 
 sourceCompatibility = 1.7
+targetCompatibility = '1.7'
+
 version = '0.1'
 
 jmh {
