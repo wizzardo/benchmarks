@@ -16,6 +16,7 @@ repositories {
 dependencies {
 
 //    jmh 'commons-io:commons-io:2.4'
+    jmh 'com.wizzardo.tools:tools:0.12'
 }
 
 buildscript {
