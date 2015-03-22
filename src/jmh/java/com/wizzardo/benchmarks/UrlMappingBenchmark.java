@@ -21,7 +21,6 @@ import java.util.regex.Pattern;
 public class UrlMappingBenchmark {
 
     byte[] bytes;
-    int[] ints;
     byte[] bytes2;
     byte[] bytes3;
     byte[] staticPath;
@@ -31,18 +30,11 @@ public class UrlMappingBenchmark {
     UrlMapping urlMapping;
     UrlMappingTree urlMappingTree;
 
-    ByteTree byteTree;
-
-    HashMap<String, String> map;
-    String key1, key2;
+    static ByteTree byteTree;
 
     @Setup(Level.Iteration)
     public void setup() {
         bytes = "/some_path/foo/bar".getBytes();
-        ints = new int[bytes.length];
-        for (int i = 0; i < ints.length; i++) {
-            ints[i] = bytes[i];
-        }
         bytes2 = "/some_pat!/fo!/ba!".getBytes();
         bytes3 = "/!ome_path/!oo/!ar".getBytes();
         staticPath = "/some_path/foo/bar".getBytes();
@@ -68,11 +60,6 @@ public class UrlMappingBenchmark {
             byteTree.append("bar_" + i);
         }
 
-        map = new HashMap<>();
-        key1 = "key!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
-        key2 = new String(key1.getBytes());
-
-        map.put(key1, "value");
     }
 
     @Benchmark
@@ -130,125 +117,7 @@ public class UrlMappingBenchmark {
         return urlMappingTree.handle(readPath3(dynamicPath_100));
     }
 
-//    @Benchmark
-//    public int key1() {
-//        return map.get(key1).length();
-//    }
-//
-//    @Benchmark
-//    public int key2() {
-//        return map.get(key2).length();
-//    }
-
-//    @Benchmark
-//    public int string() {
-//        return new String(bytes).hashCode();
-//    }
-//
-//    @Benchmark
-//    public int stringSplit() {
-//        return new String(bytes).split("/").length;
-//    }
-//
-//    @Benchmark
-//    public int stringAscii() {
-//        return AsciiReader.read(bytes).hashCode();
-//    }
-//
-//    @Benchmark
-//    public int path() {
-//        return readPath(bytes).size();
-//    }
-//
-//    @Benchmark
-//    public int path2() {
-//        return readPath2(bytes).size();
-//    }
-//
-//    @Benchmark
-//    public int path3() {
-//        return readPath3(bytes).size();
-//    }
-//
-//    @Benchmark
-//    public int path3_not_prepared() {
-//        return readPath3(bytes2).size();
-//    }
-//
-//    @Benchmark
-//    public int path3_not_prepared_2() {
-//        return readPath3(bytes3).size();
-//    }
-
-//    @Benchmark
-//    public int test_switch() {
-//        int sum = 0;
-//        for (byte b : bytes) {
-//            switch (b) {
-//                case '/':
-//                    sum += 1;
-//                    break;
-//                case ('0'):
-//                    sum += 2;
-//                    break;
-//                case ('1'):
-//                    sum += 2;
-//                    break;
-////                case 'z':
-////                    sum += 2;
-////                    break;
-////                case 'x':
-////                    sum += 2;
-////                    break;
-//            }
-//        }
-//        return sum;
-//    }
-//
-//    @Benchmark
-//    public int test_if() {
-//        int sum = 0;
-//        for (byte b : bytes) {
-//            if (b == '/')
-//                sum += 1;
-//            else if (b == ' ')
-//                sum += 2;
-//            else if (b == 'z')
-//                sum += 2;
-////            else if (b == 'x')
-////                sum += 2;
-//        }
-//        return sum;
-//    }
-
-//    @Benchmark
-//    public int sum_bytes() {
-//        int sum = 0;
-//        for (byte b : bytes) {
-//            sum += b;
-//        }
-//        return sum;
-//    }
-//
-//    @Benchmark
-//    public int sum_bytes2() {
-//        int sum = 0;
-//        for (byte b : bytes) {
-//            sum += b & 0xff;
-//        }
-//        return sum;
-//    }
-//
-//    @Benchmark
-//    public int sum_ints() {
-//        int sum = 0;
-//        for (int b : ints) {
-//            sum += b;
-//        }
-//        return sum;
-//    }
-
-    private Path readPath(byte[] bytes) {
+    static Path readPath(byte[] bytes) {
         if (bytes[0] != '/')
             throw new IllegalStateException("path must starts with '/'");
 
@@ -270,7 +139,7 @@ public class UrlMappingBenchmark {
         return path;
     }
 
-    private Path readPath2(byte[] bytes) {
+    static Path readPath2(byte[] bytes) {
         if (bytes[0] != '/')
             throw new IllegalStateException("path must starts with '/'");
 
@@ -310,7 +179,7 @@ public class UrlMappingBenchmark {
         return path;
     }
 
-    private Path readPath3(byte[] bytes) {
+    static Path readPath3(byte[] bytes) {
         if (bytes[0] != '/')
             throw new IllegalStateException("path must starts with '/'");
 
