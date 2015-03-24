@@ -19,6 +19,10 @@ dependencies {
 
 //    jmh 'commons-io:commons-io:2.4'
     jmh 'com.wizzardo.tools:tools:0.12'
+
+    //clone benchmark
+    jmh 'uk.com.robust-it:cloning:1.9.1'
+    jmh 'org.apache.commons:commons-lang3:3.3.2'
 }
 
 buildscript {
