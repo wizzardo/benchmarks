@@ -1,8 +1,8 @@
 apply plugin: 'java'
 apply plugin: 'me.champeau.gradle.jmh'
 
-sourceCompatibility = 1.7
-targetCompatibility = '1.7'
+sourceCompatibility = 1.8
+targetCompatibility = '1.8'
 
 version = '0.1'
 
@@ -10,6 +10,7 @@ jmh {
     jmhVersion = '1.7' // Specifies JMH version
     include ".*Benchmark.*"
 }
+//  ./gradlew jmhJar && java -jar build/libs/benchmarks-0.1-jmh.jar ".*Benchmark.*"
 
 repositories {
     jcenter()
