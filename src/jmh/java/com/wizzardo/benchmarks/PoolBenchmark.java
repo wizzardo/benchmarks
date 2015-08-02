@@ -2,6 +2,7 @@ package com.wizzardo.benchmarks;
 
 import com.wizzardo.tools.misc.Unchecked;
 import com.wizzardo.tools.misc.pool.*;
+import com.wizzardo.tools.misc.*;
 import org.openjdk.jmh.annotations.*;
 
 
@@ -65,7 +66,7 @@ public class PoolBenchmark {
     Pool<StringBuilder> customPool = new PoolBuilder<StringBuilder>()
             .supplier(StringBuilder::new)
             .resetter(sb -> sb.setLength(0))
-            .queue(new PoolBuilder.Supplier<Queue<Holder<StringBuilder>>>() {
+            .queue(new Supplier<Queue<Holder<StringBuilder>>>() {
                 ThreadLocal<Queue<Holder<StringBuilder>>> queue = new ThreadLocal<Queue<Holder<StringBuilder>>>() {
                     @Override
                     protected Queue<Holder<StringBuilder>> initialValue() {
@@ -74,7 +75,7 @@ public class PoolBenchmark {
                 };
 
                 @Override
-                public Queue<Holder<StringBuilder>> get() {
+                public Queue<Holder<StringBuilder>> supply() {
                     return queue.get();
                 }
             })
@@ -82,7 +83,7 @@ public class PoolBenchmark {
                 @Override
                 public StringBuilder get() {
                     StringBuilder t = super.get();
-                    resetter.reset(t);
+                    resetter.consume(t);
                     return t;
                 }
             })
