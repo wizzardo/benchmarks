@@ -7,7 +7,7 @@ targetCompatibility = '1.8'
 version = '0.1'
 
 jmh {
-    jmhVersion = '1.7' // Specifies JMH version
+    jmhVersion = '1.10.3' // Specifies JMH version
     include ".*Benchmark.*"
 }
 //  ./gradlew jmhJar && java -jar build/libs/benchmarks-0.1-jmh.jar ".*Benchmark.*"
@@ -18,8 +18,11 @@ repositories {
 
 dependencies {
 
+//    jmh files(
+//            '../Utils/build/libs/tools-all-0.14-SNAPSHOT.jar'
+//    )
 //    jmh 'commons-io:commons-io:2.4'
-    jmh 'com.wizzardo.tools:tools:0.12'
+    jmh 'com.wizzardo.tools:tools:0.13'
 
     //clone benchmark
     jmh 'uk.com.robust-it:cloning:1.9.1'
