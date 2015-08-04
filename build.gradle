@@ -23,6 +23,7 @@ dependencies {
 //    )
 //    jmh 'commons-io:commons-io:2.4'
     jmh 'com.wizzardo.tools:tools:0.13'
+    jmh 'com.fasterxml.jackson.core:jackson-databind:2.5.1'
 
     //clone benchmark
     jmh 'uk.com.robust-it:cloning:1.9.1'
