@@ -4,6 +4,7 @@ import org.openjdk.jmh.annotations.*;
 import sun.nio.cs.ArrayEncoder;
 import sun.nio.cs.Surrogate;
 
+import java.nio.charset.CoderResult;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
@@ -64,25 +65,21 @@ public class Utf8EncodeBenchmark {
         int limit = off + length;
         int l = 0;
 
-        while (l < length && chars[off] < 128) {
+        while (l < length && chars[off++] < 128) {
             l++;
-            off++;
         }
+        if (l == length)
+            return l;
 
-        Surrogate.Parser sgp = null;
-
+        off--;
         while (off < limit) {
-            char ch = chars[off++];
+            int ch = chars[off++];
             if (ch < 128) {
                 l++;
             } else if (ch < 2048) {
                 l += 2;
             } else if (ch >= '\uD800' && ch < '\uE000') {//isSurrogate
-                if (sgp == null) {
-                    sgp = new Surrogate.Parser();
-                }
-
-                int r = sgp.parse(ch, chars, off - 1, limit);
+                int r = parseSurrogate((char) ch, chars, off, limit);
                 if (r < 0) {
                     l++;
                 } else {
@@ -109,7 +106,6 @@ public class Utf8EncodeBenchmark {
         if (l == i)
             return l;
 
-        Surrogate.Parser sgp = null;
         off--;
         while (off < limit) {
             int c = chars[off++];
@@ -119,11 +115,7 @@ public class Utf8EncodeBenchmark {
                 bytes[l++] = (byte) (192 | c >> 6);
                 bytes[l++] = (byte) (128 | c & 63);
             } else if (c >= '\uD800' && c < '\uE000') {//isSurrogate
-                if (sgp == null) {
-                    sgp = new Surrogate.Parser();
-                }
-
-                int r = sgp.parse((char) c, chars, off - 1, limit);
+                int r = parseSurrogate((char) c, chars, off, limit);
                 if (r < 0) {
                     bytes[l++] = '?';
                 } else {
@@ -141,5 +133,24 @@ public class Utf8EncodeBenchmark {
         }
 
         return l;
+    }
+
+    public int parseSurrogate(char ch, char[] chars, int offset, int limit) {
+        if (Character.isHighSurrogate(ch)) {
+            if (limit - offset < 1) {
+                return -1;
+            } else {
+                char ch2 = chars[offset];
+                if (Character.isLowSurrogate(ch2)) {
+                    return Character.toCodePoint(ch, ch2);
+                } else {
+                    return -1;
+                }
+            }
+        } else if (Character.isLowSurrogate(ch)) {
+            return -1;
+        } else {
+            return ch;
+        }
     }
 }
