@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 @Fork(value = 1, jvmArgsAppend = {"-Xmx2048m", "-server", "-XX:+AggressiveOpts"})
 @Measurement(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
 @Warmup(iterations = 15, time = 1, timeUnit = TimeUnit.SECONDS)
-public class Utf8Benchmark {
+public class Utf8EncodeBenchmark {
 
     char[] chars;
 
