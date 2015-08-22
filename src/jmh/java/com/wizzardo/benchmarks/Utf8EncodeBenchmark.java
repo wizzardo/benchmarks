@@ -1,6 +1,7 @@
 package com.wizzardo.benchmarks;
 
 import org.openjdk.jmh.annotations.*;
+import sun.nio.cs.ArrayEncoder;
 import sun.nio.cs.Surrogate;
 
 import java.nio.charset.StandardCharsets;
@@ -28,6 +29,15 @@ public class Utf8EncodeBenchmark {
     @Benchmark
     public int getBytes() {
         return new String(chars).getBytes(StandardCharsets.UTF_8).length;
+    }
+
+    @Benchmark
+    public int native_encode() {
+        char[] chars = this.chars;
+        byte[] bytes = new byte[chars.length * 4];
+        int l = ((ArrayEncoder) StandardCharsets.UTF_8.newEncoder()).encode(chars, 0, chars.length, bytes);
+        bytes = Arrays.copyOf(bytes, l);
+        return bytes.length;
     }
 
     @Benchmark
