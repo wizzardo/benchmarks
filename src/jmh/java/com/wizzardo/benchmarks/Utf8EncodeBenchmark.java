@@ -15,15 +15,17 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Fork(value = 1, jvmArgsAppend = {"-Xmx2048m", "-server", "-XX:+AggressiveOpts"})
-@Measurement(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
-@Warmup(iterations = 15, time = 1, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
+@Warmup(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
 public class Utf8EncodeBenchmark {
 
     char[] chars;
 
     @Setup(Level.Iteration)
     public void setup() {
+        chars = "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz".toCharArray();
         chars = "some utf-8 string раз два aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbccccccccccccccccccccccccccccccccccccccccc ййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййй jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj".toCharArray();
+        chars = "яяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяя".toCharArray();
     }
 
     @Benchmark
@@ -99,26 +101,29 @@ public class Utf8EncodeBenchmark {
         int limit = off + length;
         int l = 0;
 
+        int ch;
         int i = l + Math.min(length, bytes.length);
-        while (l < i && chars[off] < 128) {
-            bytes[l++] = (byte) chars[off++];
+        while (l < i && (ch = chars[off++]) < 128) {
+            bytes[l++] = (byte) ch;
         }
+        if (l == i)
+            return l;
 
         Surrogate.Parser sgp = null;
-
+        off--;
         while (off < limit) {
-            char ch = chars[off++];
-            if (ch < 128) {
-                bytes[l++] = (byte) ch;
-            } else if (ch < 2048) {
-                bytes[l++] = (byte) (192 | ch >> 6);
-                bytes[l++] = (byte) (128 | ch & 63);
-            } else if (ch >= '\uD800' && ch < '\uE000') {//isSurrogate
+            int c = chars[off++];
+            if (c < 128) {
+                bytes[l++] = (byte) c;
+            } else if (c < 2048) {
+                bytes[l++] = (byte) (192 | c >> 6);
+                bytes[l++] = (byte) (128 | c & 63);
+            } else if (c >= '\uD800' && c < '\uE000') {//isSurrogate
                 if (sgp == null) {
                     sgp = new Surrogate.Parser();
                 }
 
-                int r = sgp.parse(ch, chars, off - 1, limit);
+                int r = sgp.parse((char) c, chars, off - 1, limit);
                 if (r < 0) {
                     bytes[l++] = '?';
                 } else {
@@ -129,9 +134,9 @@ public class Utf8EncodeBenchmark {
                     ++off;
                 }
             } else {
-                bytes[l++] = (byte) (224 | ch >> 12);
-                bytes[l++] = (byte) (128 | ch >> 6 & 63);
-                bytes[l++] = (byte) (128 | ch & 63);
+                bytes[l++] = (byte) (224 | c >> 12);
+                bytes[l++] = (byte) (128 | c >> 6 & 63);
+                bytes[l++] = (byte) (128 | c & 63);
             }
         }
 
