@@ -24,15 +24,15 @@ public class Utf8EncodeBenchmark {
 
     @Setup(Level.Iteration)
     public void setup() {
-        chars = "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz".toCharArray();
         chars = "some utf-8 string раз два aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbccccccccccccccccccccccccccccccccccccccccc ййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййй jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj".toCharArray();
+        chars = "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz".toCharArray();
         chars = "яяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяя".toCharArray();
     }
 
-    @Benchmark
-    public int getBytes() {
-        return new String(chars).getBytes(StandardCharsets.UTF_8).length;
-    }
+//    @Benchmark
+//    public int getBytes() {
+//        return new String(chars).getBytes(StandardCharsets.UTF_8).length;
+//    }
 
     @Benchmark
     public int native_encode() {
@@ -65,11 +65,14 @@ public class Utf8EncodeBenchmark {
         int limit = off + length;
         int l = 0;
 
-        while (l < length && chars[off++] < 128) {
-            l++;
+        while (l < length ) {
+            if (chars[off++] >= 128)
+                l++;
+            else {
+                off--;
+                break;
+            }
         }
-        if (l == length)
-            return l;
 
         off--;
         while (off < limit) {
@@ -100,13 +103,15 @@ public class Utf8EncodeBenchmark {
 
         int ch;
         int i = l + Math.min(length, bytes.length);
-        while (l < i && (ch = chars[off++]) < 128) {
-            bytes[l++] = (byte) ch;
+        while (l < i ) {
+            if ((ch = chars[off++]) < 128)
+                bytes[l++] = (byte) ch;
+            else {
+                off--;
+                break;
+            }
         }
-        if (l == i)
-            return l;
 
-        off--;
         while (off < limit) {
             int c = chars[off++];
             if (c < 128) {
