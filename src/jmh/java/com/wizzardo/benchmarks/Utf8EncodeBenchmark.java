@@ -20,6 +20,11 @@ import java.util.concurrent.TimeUnit;
 @Warmup(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
 public class Utf8EncodeBenchmark {
 
+    //    @Param({"1", "2", "4", "8", "16", "32", "64", "128", "256", "512", "1024", "2048", "4096"})
+//    @Param({"4096", "8192", "16384", "32768"})
+    @Param({"32768", "65536", "131072", "262144"})
+    String size;
+
     char[] chars;
 
     @Setup(Level.Iteration)
@@ -27,12 +32,20 @@ public class Utf8EncodeBenchmark {
         chars = "some utf-8 string раз два aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbccccccccccccccccccccccccccccccccccccccccc ййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййй jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj".toCharArray();
         chars = "яяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяя".toCharArray();
         chars = "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz".toCharArray();
+
+        StringBuilder sb = new StringBuilder();
+        int l = Integer.parseInt(size);
+        for (int i = 0; i < l; i++) {
+//            sb.append('z');
+            sb.append('я');
+        }
+        chars = sb.toString().toCharArray();
     }
 
-//    @Benchmark
-//    public int getBytes() {
-//        return new String(chars).getBytes(StandardCharsets.UTF_8).length;
-//    }
+    @Benchmark
+    public int getBytes() {
+        return new String(chars).getBytes(StandardCharsets.UTF_8).length;
+    }
 
     @Benchmark
     public int native_encode() {
@@ -65,7 +78,7 @@ public class Utf8EncodeBenchmark {
         int limit = off + length;
         int l = 0;
 
-        while (l < length ) {
+        while (l < length) {
             if (chars[off++] < 128)
                 l++;
             else {
@@ -74,7 +87,6 @@ public class Utf8EncodeBenchmark {
             }
         }
 
-        off--;
         while (off < limit) {
             int ch = chars[off++];
             if (ch < 128) {
@@ -103,7 +115,7 @@ public class Utf8EncodeBenchmark {
 
         int ch;
         int i = l + Math.min(length, bytes.length);
-        while (l < i ) {
+        while (l < i) {
             if ((ch = chars[off++]) < 128)
                 bytes[l++] = (byte) ch;
             else {
