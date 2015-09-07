@@ -30,16 +30,16 @@ public class Utf8DecodeBenchmark {
     @Setup(Level.Iteration)
     public void setup() throws UnsupportedEncodingException {
         String s = "some utf-8 string раз два aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbccccccccccccccccccccccccccccccccccccccccc ййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййй jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj";
-        s = "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz";
-        s = "яяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяя";
         s = "€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€";
+        s = "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz";
+        s = "¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢";
 
         bytes = s.getBytes("utf-8");
         chars = new char[s.length()];
 
         Decoder decoder = new Decoder();
         decoder.decode(bytes, 0, bytes.length, chars);
-        assert s.endsWith(new String(chars));
+        assert s.equals(new String(chars));
     }
 
     @Benchmark
@@ -58,63 +58,44 @@ public class Utf8DecodeBenchmark {
 
         private final static char malformed = '�';
 
-        private static boolean isNotContinuation(int ch) {
-            return (ch & 0b11000000) != 0b10000000;
+        private static boolean isNotContinuation(int b) {
+            return (b & 0b11000000) != 0b10000000;
         }
 
-        private static boolean isMalformed3(int var0, int var1, int var2) {
-            return var0 == -32 && (var1 & 224) == 128 || (var1 & 192) != 128 || (var2 & 192) != 128;
+        private static boolean isMalformed3(int b1, int b2, int b3) {
+            return b1 == -32 && (b2 & 224) == 128 || (b2 & 192) != 128 || (b3 & 192) != 128;
         }
 
-        private static boolean isMalformed3_2(int var0, int var1) {
-            return var0 == -32 && (var1 & 224) == 128 || (var1 & 192) != 128;
+        private static boolean isMalformed3_2(int b1, int b2) {
+            return b1 == -32 && (b2 & 224) == 128 || (b2 & 192) != 128;
         }
 
-        private static boolean isMalformed4(int var0, int var1, int var2) {
-            return (var0 & 192) != 128 || (var1 & 192) != 128 || (var2 & 192) != 128;
+        private static boolean isMalformed4(int b1, int b2, int b3) {
+            return (b1 & 192) != 128 || (b2 & 192) != 128 || (b3 & 192) != 128;
         }
 
-        private static boolean isMalformed4_2(int var0, int var1) {
-            return var0 == 240 && (var1 < 144 || var1 > 191) || var0 == 244 && (var1 & 240) != 128 || (var1 & 192) != 128;
+        private static boolean isMalformed4_2(int b1, int b2) {
+            return b1 == 240 && (b2 < 144 || b2 > 191) || b1 == 244 && (b2 & 240) != 128 || (b2 & 192) != 128;
         }
 
-        private static boolean isMalformed4_3(int var0) {
-            return (var0 & 192) != 128;
+        private static boolean isMalformed4_3(int b1) {
+            return (b1 & 192) != 128;
         }
 
-        private static int malformedN(byte[] bytes, int offset, int length) {
-            switch (length) {
-                case 1:
-                case 2:
-                    return 1;
-                case 3:
-                    byte b1 = bytes[offset];
-                    byte b2 = bytes[offset + 1];
-                    return (b1 != -32 || (b2 & 224) != 128) && !isNotContinuation(b2) ? 2 : 1;
-                case 4:
-                    int i1 = bytes[offset] & 255;
-                    int i2 = bytes[offset + 1] & 255;
-                    if (i1 <= 244 && (i1 != 240 || i2 >= 144 && i2 <= 191) && (i1 != 244 || (i2 & 240) == 128) && !isNotContinuation(i2)) {
-                        if (isNotContinuation(bytes[offset + 2]))
-                            return 2;
-
-                        return 3;
-                    }
-
-                    return 1;
-                default:
-                    assert false;
-                    return -1;
-            }
+        public static boolean isSurrogate(char ch) {
+            return ch >= '\uD800' && ch < '\uE000';
         }
 
-        private static ByteBuffer getByteBuffer(ByteBuffer bb, byte[] bytes, int offset) {
-            if (bb == null) {
-                bb = ByteBuffer.wrap(bytes);
-            }
+        public static boolean isSupplementaryCodePoint(int codePoint) {
+            return codePoint >= 0x010000 && codePoint < 0x110000;
+        }
 
-            bb.position(offset);
-            return bb;
+        public static char highSurrogate(int codePoint) {
+            return (char) ((codePoint >>> 10) + 55232);
+        }
+
+        public static char lowSurrogate(int codePoint) {
+            return (char) ((codePoint & 0x3ff) + '\uDC00');
         }
 
         public int decode(byte[] bytes, int offset, int length, char[] chars) {
@@ -144,11 +125,9 @@ public class Utf8DecodeBenchmark {
                                 b2 = bytes[offset++];
                                 if (isMalformed3(b, b1, b2)) {
                                     chars[i++] = malformed;
-                                    offset -= 3;
-                                    offset += malformedN(bytes, offset, 3);
                                 } else {
                                     char ch = (char) (b << 12 ^ b1 << 6 ^ b2 ^ -123008);
-                                    if (Character.isSurrogate(ch)) {
+                                    if (isSurrogate(ch)) {
                                         chars[i++] = malformed;
                                     } else {
                                         chars[i++] = ch;
@@ -169,17 +148,15 @@ public class Utf8DecodeBenchmark {
                             b2 = bytes[offset++];
                             byte b3 = bytes[offset++];
                             int value = b << 18 ^ b1 << 12 ^ b2 << 6 ^ b3 ^ 3678080;
-                            if (!isMalformed4(b1, b2, b3) && Character.isSupplementaryCodePoint(value)) {
-                                chars[i++] = Character.highSurrogate(value);
-                                chars[i++] = Character.lowSurrogate(value);
+                            if (!isMalformed4(b1, b2, b3) && isSupplementaryCodePoint(value)) {
+                                chars[i++] = highSurrogate(value);
+                                chars[i++] = lowSurrogate(value);
                             } else {
                                 chars[i++] = malformed;
-                                offset -= 4;
-                                offset += malformedN(bytes, offset, 4);
                             }
                         } else {
-                            int var14 = b & 0xff;
-                            if (var14 <= 244 && (offset >= to || !isMalformed4_2(var14, bytes[offset] & 0xff))) {
+                            int i1 = b & 0xff;
+                            if (i1 <= 244 && (offset >= to || !isMalformed4_2(i1, bytes[offset] & 0xff))) {
                                 ++offset;
                                 if (offset >= to || !isMalformed4_3(bytes[offset])) {
                                     chars[i++] = malformed;
