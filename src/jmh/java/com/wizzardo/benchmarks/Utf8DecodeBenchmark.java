@@ -127,11 +127,11 @@ public class Utf8DecodeBenchmark {
             }
 
             while (offset < to) {
-                byte b = bytes[offset++];
+                int b = bytes[offset++];
                 if (b < 0) {
-                    byte b1;
+                    int b1;
                     if (b >> 5 != -2 || (b & 0x1e) == 0) {
-                        byte b2;
+                        int b2;
                         if (b >> 4 == -2) {
                             if (offset + 1 < to) {
                                 b1 = bytes[offset++];
@@ -159,7 +159,7 @@ public class Utf8DecodeBenchmark {
                         } else if (offset + 2 < to) {
                             b1 = bytes[offset++];
                             b2 = bytes[offset++];
-                            byte b3 = bytes[offset++];
+                            int b3 = bytes[offset++];
                             int value = b << 18 ^ b1 << 12 ^ b2 << 6 ^ b3 ^ 3678080;
                             if (!isMalformed4(b1, b2, b3) && isSupplementaryCodePoint(value)) {
                                 chars[i++] = highSurrogate(value);
