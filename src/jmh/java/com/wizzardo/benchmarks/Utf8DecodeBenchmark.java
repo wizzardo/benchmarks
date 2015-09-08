@@ -2,14 +2,9 @@ package com.wizzardo.benchmarks;
 
 import org.openjdk.jmh.annotations.*;
 import sun.nio.cs.ArrayDecoder;
-import sun.nio.cs.Surrogate;
 
 import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.nio.charset.CoderResult;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -27,19 +22,37 @@ public class Utf8DecodeBenchmark {
     char[] chars;
     Charset utf8 = Charset.forName("UTF-8");
 
+    @Param({"1", "2", "3"})
+    String bytesPerChar;
+
     @Setup(Level.Iteration)
     public void setup() throws UnsupportedEncodingException {
-        String s = "some utf-8 string раз два aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbccccccccccccccccccccccccccccccccccccccccc ййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййй jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj";
-        s = "€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€";
-        s = "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz";
-        s = "¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢";
+        String s = "";
+        int n = 300;
+        if ("1".equals(bytesPerChar))
+            s = makeString('z', 1, n);
+
+        if ("2".equals(bytesPerChar))
+            s = makeString('¢', 2, n);
+
+        if ("3".equals(bytesPerChar))
+            s = makeString('€', 3, n);
 
         bytes = s.getBytes("utf-8");
+        assert bytes.length == n;
         chars = new char[s.length()];
 
         Decoder decoder = new Decoder();
         decoder.decode(bytes, 0, bytes.length, chars);
         assert s.equals(new String(chars));
+    }
+
+    private String makeString(char ch, int bytesPerChar, int length) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < length; i += bytesPerChar) {
+            builder.append(ch);
+        }
+        return builder.toString();
     }
 
     @Benchmark
