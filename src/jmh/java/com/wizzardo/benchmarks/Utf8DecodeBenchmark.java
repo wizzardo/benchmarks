@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Fork(value = 1, jvmArgsAppend = {"-Xmx2048m", "-server", "-XX:+AggressiveOpts"})
 @Measurement(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
-@Warmup(iterations = 15, time = 1, timeUnit = TimeUnit.SECONDS)
+@Warmup(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
 public class Utf8DecodeBenchmark {
 
     byte[] bytes;
@@ -59,6 +59,24 @@ public class Utf8DecodeBenchmark {
     public int custom_decode() {
         Decoder decoder = new Decoder();
         return decoder.decode(bytes, 0, bytes.length, chars);
+    }
+
+    Utf8DecodeBenchmark.Decoder.DecodeOffsets offsets = new Decoder.DecodeOffsets(0, 0);
+    Utf8DecodeBenchmark.Decoder.Offset offset = new Decoder.Offset(0);
+
+    @Benchmark
+    public int custom_decode_continues() {
+        Decoder decoder = new Decoder();
+        offsets.bytesOffset = 0;
+        offsets.charsOffset = 0;
+        return decoder.decode(bytes, bytes.length, chars, offsets).charsOffset;
+    }
+
+    @Benchmark
+    public int custom_decode_continues2() {
+        Decoder decoder = new Decoder();
+        offset.set(0);
+        return decoder.decode(bytes, 0, bytes.length, chars, offset);
     }
 
     @Benchmark
@@ -114,10 +132,9 @@ public class Utf8DecodeBenchmark {
         public int decode(byte[] bytes, int offset, int length, char[] chars) {
             int to = offset + length;
             int i = 0;
-            int l = Math.min(length, chars.length);
 
             int temp;
-            while (i < l) {
+            while (i < length) {
                 if ((temp = bytes[offset++]) >= 0)
                     chars[i++] = (char) temp;
                 else {
@@ -200,6 +217,213 @@ public class Utf8DecodeBenchmark {
                 }
             }
 
+            return i;
+        }
+
+        public static class DecodeOffsets {
+            public int charsOffset;
+            public int bytesOffset;
+
+            public DecodeOffsets(int charsDecoded, int bytesOffset) {
+                this.charsOffset = charsDecoded;
+                this.bytesOffset = bytesOffset;
+            }
+
+            public DecodeOffsets update(int charsOffset, int bytesOffset) {
+                this.charsOffset = charsOffset;
+                this.bytesOffset = bytesOffset;
+                return this;
+            }
+        }
+
+        public DecodeOffsets decode(byte[] bytes, int length, char[] chars, DecodeOffsets offsets) {
+            int offset = offsets.bytesOffset;
+            int to = offset + length;
+            int i = offsets.charsOffset;
+            int l = Math.min(length, chars.length - i);
+
+            int temp;
+            while (i < l) {
+                if ((temp = bytes[offset++]) >= 0)
+                    chars[i++] = (char) temp;
+                else {
+                    offset--;
+                    break;
+                }
+            }
+
+            while (offset < to) {
+                int b = bytes[offset++];
+                if (b < 0) {
+                    int b1;
+                    if (b >> 5 != -2 || (b & 0x1e) == 0) {
+                        int b2;
+                        if (b >> 4 == -2) {
+                            if (offset + 1 < to) {
+                                b1 = bytes[offset++];
+                                b2 = bytes[offset++];
+                                if (isMalformed3(b, b1, b2)) {
+                                    chars[i++] = malformed;
+                                } else {
+                                    char ch = (char) (b << 12 ^ b1 << 6 ^ b2 ^ -123008);
+                                    if (isSurrogate(ch)) {
+                                        chars[i++] = malformed;
+                                    } else {
+                                        chars[i++] = ch;
+                                    }
+                                }
+                            } else {
+                                if (offset >= to || !isMalformed3_2(b, bytes[offset])) {
+                                    return offsets.update(i, offset - 1);
+                                }
+                                chars[i++] = malformed;
+                            }
+                        } else if (b >> 3 != -2) {
+                            chars[i++] = malformed;
+                        } else if (offset + 2 < to) {
+                            b1 = bytes[offset++];
+                            b2 = bytes[offset++];
+                            int b3 = bytes[offset++];
+                            int value = b << 18 ^ b1 << 12 ^ b2 << 6 ^ b3 ^ 3678080;
+                            if (!isMalformed4(b1, b2, b3) && isSupplementaryCodePoint(value)) {
+                                chars[i++] = highSurrogate(value);
+                                chars[i++] = lowSurrogate(value);
+                            } else {
+                                chars[i++] = malformed;
+                            }
+                        } else {
+                            int i1 = b & 0xff;
+                            if (i1 <= 244 && (offset >= to || !isMalformed4_2(i1, bytes[offset] & 0xff))) {
+                                offset++;
+                                if (offset >= to || !isMalformed4_3(bytes[offset]))
+                                    return offsets.update(i, offset - 2);
+
+                                chars[i++] = malformed;
+                            } else {
+                                chars[i++] = malformed;
+                            }
+                        }
+                    } else {
+                        if (offset >= to)
+                            return offsets.update(i, offset - 1);
+
+                        b1 = bytes[offset++];
+                        if (isNotContinuation(b1)) {
+                            chars[i++] = malformed;
+                            --offset;
+                        } else {
+                            chars[i++] = (char) (b << 6 ^ b1 ^ 0b1111_1000_0000);
+                        }
+                    }
+                } else {
+                    chars[i++] = (char) b;
+                }
+            }
+
+            return offsets.update(i, offset);
+        }
+
+        public static class Offset {
+            public int offset;
+
+            public Offset(int offset) {
+                this.offset = offset;
+            }
+
+            public void set(int offset) {
+                this.offset = offset;
+            }
+        }
+
+        public int decode(byte[] bytes, int offset, int length, char[] chars, Offset bytesOffset) {
+            int to = offset + length;
+            int i = bytesOffset.offset;
+            int l = Math.min(length, chars.length - i);
+
+            int temp;
+            while (i < l) {
+                if ((temp = bytes[offset++]) >= 0)
+                    chars[i++] = (char) temp;
+                else {
+                    offset--;
+                    break;
+                }
+            }
+
+            while (offset < to) {
+                int b = bytes[offset++];
+                if (b < 0) {
+                    int b1;
+                    if (b >> 5 != -2 || (b & 0x1e) == 0) {
+                        int b2;
+                        if (b >> 4 == -2) {
+                            if (offset + 1 < to) {
+                                b1 = bytes[offset++];
+                                b2 = bytes[offset++];
+                                if (isMalformed3(b, b1, b2)) {
+                                    chars[i++] = malformed;
+                                } else {
+                                    char ch = (char) (b << 12 ^ b1 << 6 ^ b2 ^ -123008);
+                                    if (isSurrogate(ch)) {
+                                        chars[i++] = malformed;
+                                    } else {
+                                        chars[i++] = ch;
+                                    }
+                                }
+                            } else {
+                                if (offset >= to || !isMalformed3_2(b, bytes[offset])) {
+                                    bytesOffset.set(offset - 1);
+                                    return i;
+                                }
+                                chars[i++] = malformed;
+                            }
+                        } else if (b >> 3 != -2) {
+                            chars[i++] = malformed;
+                        } else if (offset + 2 < to) {
+                            b1 = bytes[offset++];
+                            b2 = bytes[offset++];
+                            int b3 = bytes[offset++];
+                            int value = b << 18 ^ b1 << 12 ^ b2 << 6 ^ b3 ^ 3678080;
+                            if (!isMalformed4(b1, b2, b3) && isSupplementaryCodePoint(value)) {
+                                chars[i++] = highSurrogate(value);
+                                chars[i++] = lowSurrogate(value);
+                            } else {
+                                chars[i++] = malformed;
+                            }
+                        } else {
+                            int i1 = b & 0xff;
+                            if (i1 <= 244 && (offset >= to || !isMalformed4_2(i1, bytes[offset] & 0xff))) {
+                                offset++;
+                                if (offset >= to || !isMalformed4_3(bytes[offset])) {
+                                    bytesOffset.set(offset - 2);
+                                    return i;
+                                }
+
+                                chars[i++] = malformed;
+                            } else {
+                                chars[i++] = malformed;
+                            }
+                        }
+                    } else {
+                        if (offset >= to) {
+                            bytesOffset.set(offset - 1);
+                            return i;
+                        }
+
+                        b1 = bytes[offset++];
+                        if (isNotContinuation(b1)) {
+                            chars[i++] = malformed;
+                            --offset;
+                        } else {
+                            chars[i++] = (char) (b << 6 ^ b1 ^ 0b1111_1000_0000);
+                        }
+                    }
+                } else {
+                    chars[i++] = (char) b;
+                }
+            }
+
+            bytesOffset.set(offset);
             return i;
         }
     }
