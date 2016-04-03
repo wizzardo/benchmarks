@@ -30,6 +30,21 @@ public class LambdaBenchmarks {
         static Args create(int... args) {
             return i -> LambdaBenchmarks.get(i, args);
         }
+
+        static Args create2(int... args) {
+            return i -> createGetter(i, args).get();
+        }
+    }
+
+    interface Getter {
+        int get();
+    }
+
+    static Getter createGetter(int i, int... args) {
+        if (i >= args.length)
+            return () -> -1;
+        else
+            return () -> args[i];
     }
 
     static int get(int i, int... args) {
@@ -48,12 +63,32 @@ public class LambdaBenchmarks {
 
     @Benchmark
     public int args_2() {
-        return Args.create(1, 2).get(0);
+        return Args.create(0, 1, 2).get(0);
     }
 
     @Benchmark
     public int args_3() {
         return Args.create(array).get(0);
+    }
+
+    @Benchmark
+    public int args_2_empty() {
+        return Args.create2().get(0);
+    }
+
+    @Benchmark
+    public int args_2_1() {
+        return Args.create2(1).get(0);
+    }
+
+    @Benchmark
+    public int args_2_2() {
+        return Args.create2(0, 1, 2).get(0);
+    }
+
+    @Benchmark
+    public int args_2_3() {
+        return Args.create2(array).get(0);
     }
 
     @Benchmark
