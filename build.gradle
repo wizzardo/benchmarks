@@ -7,27 +7,39 @@ targetCompatibility = '1.8'
 version = '0.1'
 
 jmh {
-    jmhVersion = '1.10.3' // Specifies JMH version
+    jmhVersion = '1.12' // Specifies JMH version
     include ".*Benchmark.*"
 }
 //  ./gradlew jmhJar && java -jar build/libs/benchmarks-0.1-jmh.jar ".*Benchmark.*"
 
 repositories {
     jcenter()
+    maven {
+        url "https://oss.sonatype.org/content/repositories/snapshots/"
+    }
 }
 
 dependencies {
+    jmh 'com.wizzardo.tools:tools:0.14+'
+    compile 'com.wizzardo.tools:tools:0.14+'
 
-//    jmh files(
-//            '../Utils/build/libs/tools-all-0.14-SNAPSHOT.jar'
-//    )
-//    jmh 'commons-io:commons-io:2.4'
-    jmh 'com.wizzardo.tools:tools:0.13'
     jmh 'com.fasterxml.jackson.core:jackson-databind:2.5.1'
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.5.1'
 
     //clone benchmark
     jmh 'uk.com.robust-it:cloning:1.9.1'
     jmh 'org.apache.commons:commons-lang3:3.3.2'
+    compile 'uk.com.robust-it:cloning:1.9.1'
+    compile 'org.apache.commons:commons-lang3:3.3.2'
+
+
+    jmh 'io.reactivex:rxjava:1.0.14'
+    compile 'io.reactivex:rxjava:1.0.14'
+
+
+    compile 'me.champeau.gradle:jmh-gradle-plugin:0.2.0'
+    compile "org.openjdk.jmh:jmh-core:${jmh.jmhVersion}"
+    compile "org.openjdk.jmh:jmh-generator-annprocess:${jmh.jmhVersion}"
 }
 
 buildscript {
